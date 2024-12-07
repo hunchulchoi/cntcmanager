@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>MS949 파일 뷰어</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <style>
+    /* 줄 번호 컬럼 스타일 조정 */
+    table.dataTable tbody tr td:nth-child(1) {
+      width: 30px;
+      text-align: right;
+      padding-right: 5px;
+    }
+
+    /* 입력 섹션의 테이블 td 패딩을 0으로 설정 */
+    #headerTable td,
+    #dataTableInput td,
+    #trailerTable td {
+      padding: 0;
+    }
+
+    /* 합계 행 스타일 */
+    tfoot tr {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+
+    /* 입력된 필드 배경색 변경 */
+    input.form-control.bg-success-subtle {
+      background-color: #d1e7dd;
+    }
+
+    /* 결과 �이블 �텏�트 크기 조정 */
+    #headerResultTable,
+    #dataTable,
+    #trailerResultTable {
+      font-size: 0.875rem;
+      /* 14px */
+    }
+
+    /* 결과 테이블 헤더 폰트 크기 */
+    #headerResultTable thead,
+    #dataTable thead,
+    #trailerResultTable thead {
+      font-size: 0.875rem;
+      /* 14px */
+    }
+
+    /* 결과 테이블 내용 폰트 크기 */
+    #headerResultTable tbody,
+    #dataTable tbody,
+    #trailerResultTable tbody {
+      font-size: 0.8125rem;
+      /* 13px */
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid mt-5">
+    <h1 class="mb-4">MS949 인코딩 파일 뷰어</h1>
+
+    <!-- 파일 업로드 섹션 -->
+    <div class="mb-3">
+      <label for="fileInput" class="form-label">텍스트 파일 선택</label>
+      <input class="form-control" type="file" id="fileInput">
+    </div>
+
+    <!-- 정의 섹션 전체를 아코디언으로 감싸기 -->
+    <div class="accordion mb-3" id="definitionAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingDefinitions">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDefinitions"
+            aria-expanded="true" aria-controls="collapseDefinitions">
+            정의 섹션
+          </button>
+        </h2>
+        <div id="collapseDefinitions" class="accordion-collapse collapse show" aria-labelledby="headingDefinitions"
+          data-bs-parent="#definitionAccordion">
+          <div class="accordion-body">
+            <!-- 정의 섹션을 한 줄로 배치 -->
+            <div class="row">
+              <!-- 헤더 정의 -->
+              <div class="col-md-4 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label">헤더 정의 (이름, 길이)</label>
+                  <div>
+                    <button class="btn btn-warning btn-sm me-2" onclick="clearTable('header')" title="초기화">
+                      초기화
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="addRow('header')">행 추가</button>
+                  </div>
+                </div>
+                <table class="table table-bordered" id="headerTable">
+                  <thead class="table-info">
+                    <tr>
+                      <th>no</th>
+                      <th>이름</th>
+                      <th>길이</th>
+                      <th><i class="bi bi-trash"></i></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- 초기 빈 행 5개 -->
+                    <tr>
+                      <td class="p-0 pe-1"></td>
+                      <td class="p-0">
+                        <input type="text" class="form-control header-name" placeholder="이름">
+                      </td>
+                      <td class="p-0">
+                        <input type="number" class="form-control header-length" placeholder="길이">
+                      </td>
+                      <td class="p-0">
+                        <button class="btn btn-danger btn-sm text-light" onclick="removeRow(this)" title="삭제">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <!-- 추가 빈 행 생략 -->
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="2">합계</td>
+                      <td id="headerSum">0</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <!-- 데이터 정의 -->
+              <div class="col-md-4 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label">데이터 정의 (이름, 길이)</label>
+                  <div>
+                    <button class="btn btn-warning btn-sm me-2" onclick="clearTable('data')" title="초기화">
+                      초기화
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="addRow('data')">행 추가</button>
+                  </div>
+                </div>
+                <table class="table table-bordered" id="dataTableInput">
+                  <thead class="table-info">
+                    <tr>
+                      <th>no</th>
+                      <th>이름</th>
+                      <th>길이</th>
+                      <th><i class="bi bi-trash"></i></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- 초기 빈 행 5개 -->
+                    <tr>
+                      <td class="p-0 pe-1"></td>
+                      <td class="p-0">
+                        <input type="text" class="form-control data-name" placeholder="이름">
+                      </td>
+                      <td class="p-0">
+                        <input type="number" class="form-control data-length" placeholder="길이">
+                      </td>
+                      <td class="p-0">
+                        <button class="btn btn-danger btn-sm text-light" onclick="removeRow(this)" title="삭제">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <!-- 추가 빈 행 생략 -->
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="2">합계</td>
+                      <td id="dataSum">0</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <!-- 트레일러 정의 -->
+              <div class="col-md-4 border">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label">트레일러 정의 (이름, 길이)</label>
+                  <div>
+                    <button class="btn btn-warning btn-sm me-2" onclick="clearTable('trailer')" title="초기화">
+                      초기화
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="addRow('trailer')">행 추가</button>
+                  </div>
+                </div>
+                <table class="table table-bordered" id="trailerTable">
+                  <thead class="table-info">
+                    <tr>
+                      <th>no</th>
+                      <th>이름</th>
+                      <th>길이</th>
+                      <th><i class="bi bi-trash"></i></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- 초기 빈 행 5개 -->
+                    <tr>
+                      <td class="p-0 pe-1"></td>
+                      <td class="p-0">
+                        <input type="text" class="form-control trailer-name" placeholder="이름">
+                      </td>
+                      <td class="p-0">
+                        <input type="number" class="form-control trailer-length" placeholder="길이">
+                      </td>
+                      <td class="p-0">
+                        <button class="btn btn-danger btn-sm text-light" onclick="removeRow(this)" title="삭제">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <!-- 추가 빈 행 생략 -->
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="2">합계</td>
+                      <td id="trailerSum">0</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 엑셀 내보내기 버튼 -->
+    <div class="mb-3">
+      <button class="btn btn-primary" onclick="exportToExcel()">엑셀로 내보내기</button>
+    </div>
+
+    <!-- 테이블 섹션 -->
+    <div class="mb-3">
+      <table class="table table-bordered" id="dataTable">
+        <thead>
+          <tr id="tableHeader">
+            <!-- 헤더가 동적으로 추가됩니다 -->
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- 데이터가 동적으로 추가됩니다 -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 페이징 컨트롤 섹션 -->
+    <nav>
+      <ul class="pagination" id="pagination">
+        <!-- 페이징 버튼이 동적으로 추가됩니다 -->
+      </ul>
+    </nav>
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+  <!-- 메인 자바스크립트 파일 -->
+  <script src="main.js"></script>
+</body>
+
+</html>
